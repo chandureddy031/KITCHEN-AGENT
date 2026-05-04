@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Profile — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:600px">
+    <section class="section text-center animate-in">
+        <h1 class="section-title">Your Profile</h1>
+        <p class="section-subtitle">Tell us about yourself</p>
+    </section>
+
+    <!-- Avatar -->
+    <section class="section text-center animate-in" style="animation-delay:0.1s">
+        <div class="profile-avatar-wrap" onclick="document.getElementById('avatarInput').click()">
+            {% if user.avatar_base64 %}
+                <img class="avatar-img" id="avatarPreview" src="{{ user.avatar_base64 }}" alt="avatar">
+            {% else %}
+                <div class="avatar-letter" id="avatarLetter">{{ user.display_name[0]|upper if user.display_name else 'U' }}</div>
+            {% endif %}
+            <div class="avatar-overlay">📷 Change</div>
+            <input type="file" id="avatarInput" accept="image/*" hidden onchange="previewAvatar(event)">
+        </div>
+    </section>
+
+    <!-- Form -->
+    <section class="section animate-in" style="animation-delay:0.2s">
+        <div class="glass-card">
+            <div class="form-group">
+                <label class="form-label">What should we call you?</label>
+                <input type="text" class="input" id="profDisplay" value="{{ user.display_name }}" placeholder="Your display name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bio</label>
+                <textarea id="profBio" placeholder="Tell us about your cooking style...">{{ user.bio }}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="text" class="input" value="{{ user.email }}" disabled style="opacity:0.5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" class="input" value="{{ user.username }}" disabled style="opacity:0.5">
+            </div>
+            <button class="btn btn-primary" style="width:100%" id="saveProfBtn" onclick="saveProfile()">Save Profile</button>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    let avatarBase64='{{ user.avatar_base64 }}';
+
+    function previewAvatar(e){
+        const file=e.target.files[0];
+        if(!file)return;
+        if(file.size>5*1024*1024)return showToast('Image must be under 5MB','error');
+
+        const reader=new FileReader();
+        reader.onload=function(ev){
+            const img=new Image();
+            img.onload=function(){
+                const canvas=document.createElement('canvas');
+                const max=200;
+                let w=img.width,h=img.height;
+                if(w>max){h=h*max/w;w=max}
+                if(h>max){w=w*max/h;h=max}
+                canvas.width=w;canvas.height=h;
+                canvas.getContext('2d').drawImage(img,0,0,w,h);
+                avatarBase64=canvas.toDataURL('image/jpeg',0.8);
+
+                const preview=document.getElementById('avatarPreview');
+                const letter=document.getElementById('avatarLetter');
+                if(preview){preview.src=avatarBase64}
+                else if(letter){
+                    const wrap=letter.parentElement;
+                    letter.remove();
+                    const newImg=document.createElement('img');
+                    newImg.className='avatar-img';
+                    newImg.id='avatarPreview';
+                    newImg.src=avatarBase64;
+                    wrap.prepend(newImg);
+                }
+            };
+            img.src=ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function saveProfile(){
+        const display=document.getElementById('profDisplay').value.trim();
+        const bio=document.getElementById('profBio').value.trim();
+        document.getElementById('saveProfBtn').disabled=true;
+        try{
+            await api('/api/profile',{method:'PUT',body:JSON.stringify({
+                display_name:display,bio:bio,avatar_base64:avatarBase64
+            })});
+            showToast('Profile updated!','success');
+            setTimeout(()=>window.location.href='/',800);
+        }catch(e){document.getElementById('saveProfBtn').disabled=false}
+    }
+</script>
+{% endblock %}

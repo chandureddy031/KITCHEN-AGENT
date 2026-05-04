@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Edit Kitchen — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="section animate-in">
+        <a href="/" style="font-size:0.8rem;color:var(--text-3);display:inline-flex;align-items:center;gap:6px;margin-bottom:20px">Back to Kitchens</a>
+        <div class="section-header">
+            <h2 class="section-title">Edit Kitchen</h2>
+            <p class="section-subtitle">Update your groceries, family, or kitchen name</p>
+        </div>
+    </section>
+
+    <!-- Kitchen Name -->
+    <section class="section animate-in" style="animation-delay:0.1s">
+        <div class="glass-card">
+            <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Kitchen Name</label>
+                <input type="text" class="input" id="kitchenName" value="Loading...">
+            </div>
+        </div>
+    </section>
+
+    <!-- Groceries -->
+    <section class="section animate-in" style="animation-delay:0.2s">
+        <div class="section-header">
+            <h2 class="section-title">Groceries</h2>
+            <p class="section-subtitle">Edit your available ingredients</p>
+        </div>
+        <div class="glass-card">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Item Name</label><input type="text" class="input" id="gName" placeholder="e.g. Tomato"></div>
+                <div class="form-group"><label class="form-label">Quantity</label><input type="number" class="input" id="gQty" placeholder="2" min="0.1" step="0.1"></div>
+                <div class="form-group"><label class="form-label">Unit</label>
+                    <select id="gUnit"><option value="kg">kg</option><option value="liters">liters</option><option value="pieces">pieces</option><option value="packets">packets</option><option value="dozen">dozen</option><option value="grams">grams</option><option value="cups">cups</option></select>
+                </div>
+                <div class="form-group"><button class="btn btn-primary btn-sm" onclick="addG()" style="margin-top:0">+ Add</button></div>
+            </div>
+            <div class="tag-list" id="gList"></div>
+        </div>
+    </section>
+
+    <!-- Family -->
+    <section class="section animate-in" style="animation-delay:0.3s">
+        <div class="section-header">
+            <h2 class="section-title">Family Members</h2>
+            <p class="section-subtitle">Edit who is eating</p>
+        </div>
+        <div class="glass-card">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Name</label><input type="text" class="input" id="fName" placeholder="e.g. Mom"></div>
+                <div class="form-group"><label class="form-label">Age</label><input type="number" class="input" id="fAge" placeholder="35" min="1" max="120"></div>
+                <div class="form-group"><label class="form-label">Appetite</label>
+                    <select id="fApp"><option value="light">Light</option><option value="medium">Medium</option><option value="heavy">Heavy</option></select>
+                </div>
+                <div class="form-group"><button class="btn btn-primary btn-sm" onclick="addF()" style="margin-top:0">+ Add</button></div>
+            </div>
+            <div class="tag-list" id="fList"></div>
+        </div>
+    </section>
+
+    <!-- Warning -->
+    <section class="section animate-in" style="animation-delay:0.35s">
+        <div class="glass-card" style="border-color:rgba(245,158,11,0.2);background:rgba(245,158,11,0.03)">
+            <p style="font-size:0.8rem;color:var(--accent)">Saving changes will reset your current meal plan. You can regenerate it from the dashboard.</p>
+        </div>
+    </section>
+
+    <!-- Submit -->
+    <section class="section text-center animate-in" style="animation-delay:0.4s">
+        <button class="btn btn-primary btn-lg" id="saveBtn" onclick="saveKitchen()">Save Changes</button>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    // Get store_id from the Jinja template variable
+    const storeId = '{{ store_id }}';
+
+    // Safety check: if storeId is empty, redirect back
+    if (!storeId || storeId.trim() === '' || storeId === 'None') {
+        showToast('Invalid kitchen ID. Redirecting...', 'error');
+        setTimeout(() => window.location.href = '/', 1000);
+    }
+
+    const groceries = {};
+    const family = [];
+
+    // ── Load store data from API ─────────────────────────────
+    async function loadStore() {
+        try {
+            const data = await api('/api/stores/' + storeId);
+            const store = data.store;
+
+            document.getElementById('kitchenName').value = store.name || 'My Kitchen';
+
+            for (const [name, info] of Object.entries(store.groceries || {})) {
+                groceries[name] = { qty: info.qty, unit: info.unit };
+            }
+
+            for (const member of (store.family || [])) {
+                family.push({ name: member.name, age: member.age, appetite: member.appetite });
+            }
+
+            renderG();
+            renderF();
+        } catch (e) {
+            showToast('Failed to load kitchen data', 'error');
+        }
+    }
+
+    // ── Grocery functions ────────────────────────────────────
+    function addG() {
+        const n = document.getElementById('gName').value.trim();
+        const q = parseFloat(document.getElementById('gQty').value);
+        const u = document.getElementById('gUnit').value;
+        if (!n) return showToast('Enter item name', 'error');
+        if (!q || q <= 0) return showToast('Enter valid quantity', 'error');
+        groceries[n.toLowerCase()] = { qty: q, unit: u };
+        renderG();
+        document.getElementById('gName').value = '';
+        document.getElementById('gQty').value = '';
+        document.getElementById('gName').focus();
+    }
+
+    function removeG(k) {
+        delete groceries[k];
+        renderG();
+    }
+
+    function renderG() {
+        const l = document.getElementById('gList');
+        l.innerHTML = '';
+        for (const [n, i] of Object.entries(groceries)) {
+            const t = document.createElement('div');
+            t.className = 'tag';
+            t.innerHTML =
+                '<span class="tag-emoji">&#129379;</span>' +
+                '<span><b>' + n + '</b> - ' + i.qty + ' ' + i.unit + '</span>' +
+                '<span class="tag-remove" onclick="removeG(\'' + n + '\')">&times;</span>';
+            l.appendChild(t);
+        }
+    }
+
+    // ── Family functions ─────────────────────────────────────
+    function addF() {
+        const n = document.getElementById('fName').value.trim() || 'Member ' + (family.length + 1);
+        const a = parseInt(document.getElementById('fAge').value) || 30;
+        const ap = document.getElementById('fApp').value;
+        family.push({ name: n, age: a, appetite: ap });
+        renderF();
+        document.getElementById('fName').value = '';
+        document.getElementById('fAge').value = '';
+        document.getElementById('fName').focus();
+    }
+
+    function removeF(i) {
+        family.splice(i, 1);
+        renderF();
+    }
+
+    function renderF() {
+        const l = document.getElementById('fList');
+        l.innerHTML = '';
+        const icons = { light: '\u{1F957}', medium: '\u{1F37D}\u{FE0F}', heavy: '\u{1F356}' };
+        family.forEach(function(m, i) {
+            const t = document.createElement('div');
+            t.className = 'tag';
+            t.innerHTML =
+                '<span class="tag-emoji">' + (icons[m.appetite] || '') + '</span>' +
+                '<span><b>' + m.name + '</b>, ' + m.age + ' yrs, ' + m.appetite + '</span>' +
+                '<span class="tag-remove" onclick="removeF(' + i + ')">&times;</span>';
+            l.appendChild(t);
+        });
+    }
+
+    // ── Save ─────────────────────────────────────────────────
+    async function saveKitchen() {
+        if (!storeId || storeId.trim() === '' || storeId === 'None') {
+            return showToast('Cannot save: invalid kitchen ID', 'error');
+        }
+        if (Object.keys(groceries).length === 0) {
+            return showToast('Add at least one grocery item', 'error');
+        }
+        if (family.length === 0) {
+            return showToast('Add at least one family member', 'error');
+        }
+
+        showLoading('Saving changes...');
+        document.getElementById('saveBtn').disabled = true;
+
+        try {
+            await api('/api/stores/' + storeId, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name: document.getElementById('kitchenName').value.trim() || 'My Kitchen',
+                    groceries: groceries,
+                    family: family,
+                }),
+            });
+            showToast('Kitchen updated!', 'success');
+            setTimeout(function() {
+                window.location.href = '/dashboard/' + storeId;
+            }, 800);
+        } catch (e) {
+            hideLoading();
+            document.getElementById('saveBtn').disabled = false;
+        }
+    }
+
+    // ── Enter key support ────────────────────────────────────
+    document.getElementById('gName').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('gQty').focus();
+    });
+    document.getElementById('gQty').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addG();
+    });
+    document.getElementById('fName').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('fAge').focus();
+    });
+    document.getElementById('fAge').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addF();
+    });
+
+    // ── Initialize ───────────────────────────────────────────
+    loadStore();
+</script>
+{% endblock %}

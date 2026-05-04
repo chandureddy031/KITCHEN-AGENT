@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}New Kitchen — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="section animate-in">
+        <a href="/" style="font-size:0.8rem;color:var(--text-3);display:inline-flex;align-items:center;gap:6px;margin-bottom:20px">← Back to Kitchens</a>
+        <div class="section-header">
+            <h2 class="section-title">Create New Kitchen</h2>
+            <p class="section-subtitle">Name your kitchen, add what you have, and let AI do the rest</p>
+        </div>
+    </section>
+
+    <!-- Kitchen Name -->
+    <section class="section animate-in" style="animation-delay:0.1s">
+        <div class="glass-card">
+            <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Kitchen Name</label>
+                <input type="text" class="input" id="kitchenName" placeholder="e.g. This Week's Kitchen" value="My Kitchen">
+            </div>
+        </div>
+    </section>
+
+    <!-- Groceries -->
+    <section class="section animate-in" style="animation-delay:0.2s">
+        <div class="section-header">
+            <h2 class="section-title">What's in your kitchen?</h2>
+            <p class="section-subtitle">Add every ingredient you currently have</p>
+        </div>
+        <div class="glass-card">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Item Name</label><input type="text" class="input" id="gName" placeholder="e.g. Tomato"></div>
+                <div class="form-group"><label class="form-label">Quantity</label><input type="number" class="input" id="gQty" placeholder="2" min="0.1" step="0.1"></div>
+                <div class="form-group"><label class="form-label">Unit</label>
+                    <select id="gUnit"><option value="kg">kg</option><option value="liters">liters</option><option value="pieces">pieces</option><option value="packets">packets</option><option value="dozen">dozen</option><option value="grams">grams</option><option value="cups">cups</option></select>
+                </div>
+                <div class="form-group"><button class="btn btn-primary btn-sm" onclick="addG()" style="margin-top:0">+ Add</button></div>
+            </div>
+            <div class="tag-list" id="gList"></div>
+        </div>
+    </section>
+
+    <!-- Family -->
+    <section class="section animate-in" style="animation-delay:0.3s">
+        <div class="section-header">
+            <h2 class="section-title">Who's eating?</h2>
+            <p class="section-subtitle">Add family members so AI can estimate portions</p>
+        </div>
+        <div class="glass-card">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Name</label><input type="text" class="input" id="fName" placeholder="e.g. Mom"></div>
+                <div class="form-group"><label class="form-label">Age</label><input type="number" class="input" id="fAge" placeholder="35" min="1" max="120"></div>
+                <div class="form-group"><label class="form-label">Appetite</label>
+                    <select id="fApp"><option value="light">Light</option><option value="medium" selected>Medium</option><option value="heavy">Heavy</option></select>
+                </div>
+                <div class="form-group"><button class="btn btn-primary btn-sm" onclick="addF()" style="margin-top:0">+ Add</button></div>
+            </div>
+            <div class="tag-list" id="fList"></div>
+        </div>
+    </section>
+
+    <!-- Submit -->
+    <section class="section text-center animate-in" style="animation-delay:0.4s">
+        <button class="btn btn-primary btn-lg" id="createKitchenBtn" onclick="createKitchen()">🔍 Analyze & Create Kitchen</button>
+        {% if store_count >= max_stores %}
+        <p class="text-muted mt-2" style="font-size:0.75rem;color:var(--red)">You've reached the maximum of {{ max_stores }} kitchens. Please delete one first.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    const groceries={};const family=[];
+    function addG(){const n=document.getElementById('gName').value.trim();const q=parseFloat(document.getElementById('gQty').value);const u=document.getElementById('gUnit').value;if(!n)return showToast('Enter item name','error');if(!q||q<=0)return showToast('Enter valid quantity','error');groceries[n.toLowerCase()]={qty:q,unit:u};renderG();document.getElementById('gName').value='';document.getElementById('gQty').value='';document.getElementById('gName').focus()}
+    function removeG(k){delete groceries[k];renderG()}
+    function renderG(){const l=document.getElementById('gList');l.innerHTML='';for(const[n,i]of Object.entries(groceries)){const t=document.createElement('div');t.className='tag';t.innerHTML=`<span class="tag-emoji">🥘</span><span><b>${n}</b> — ${i.qty} ${i.unit}</span><span class="tag-remove" onclick="removeG('${n}')">&times;</span>`;l.appendChild(t)}}
+    function addF(){const n=document.getElementById('fName').value.trim()||`Member ${family.length+1}`;const a=parseInt(document.getElementById('fAge').value)||30;const ap=document.getElementById('fApp').value;family.push({name:n,age:a,appetite:ap});renderF();document.getElementById('fName').value='';document.getElementById('fAge').value='';document.getElementById('fName').focus()}
+    function removeF(i){family.splice(i,1);renderF()}
+    function renderF(){const l=document.getElementById('fList');l.innerHTML='';const icons={light:'🥗',medium:'🍽️',heavy:'🍖'};family.forEach((m,i)=>{const t=document.createElement('div');t.className='tag';t.innerHTML=`<span class="tag-emoji">${icons[m.appetite]}</span><span><b>${m.name}</b>, ${m.age} yrs, ${m.appetite}</span><span class="tag-remove" onclick="removeF(${i})">&times;</span>`;l.appendChild(t)})}
+
+    async function createKitchen(){
+        if(Object.keys(groceries).length===0)return showToast('Add at least one grocery item','error');
+        if(family.length===0)return showToast('Add at least one family member','error');
+        showLoading('AI is analyzing your kitchen...');
+        document.getElementById('createKitchenBtn').disabled=true;
+        try{
+            const data=await api('/api/stores',{method:'POST',body:JSON.stringify({
+                name:document.getElementById('kitchenName').value.trim()||'My Kitchen',
+                groceries,family
+            })});
+            showToast(`Kitchen created! Estimated ${data.store.estimated_days} days of groceries.`,'success');
+            setTimeout(()=>window.location.href='/dashboard/'+data.store.id,800);
+        }catch(e){hideLoading();document.getElementById('createKitchenBtn').disabled=false}
+    }
+    document.getElementById('gName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('gQty').focus()});
+    document.getElementById('gQty').addEventListener('keydown',e=>{if(e.key==='Enter')addG()});
+    document.getElementById('fName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('fAge').focus()});
+    document.getElementById('fAge').addEventListener('keydown',e=>{if(e.key==='Enter')addF()});
+</script>
+{% endblock %}

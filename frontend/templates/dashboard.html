@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="container" id="dashContent">
+    <div id="dashLoading" class="text-center" style="padding-top:100px">
+        <div class="spinner"></div>
+        <p class="text-muted mt-2">Loading your kitchen...</p>
+    </div>
+    <div id="dashMain" class="hidden">
+        <a href="/" style="font-size:0.8rem;color:var(--text-3);display:inline-flex;align-items:center;gap:6px;margin-bottom:20px">← Back to Kitchens</a>
+
+        <!-- Store Header -->
+        <section class="section animate-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+                <div>
+                    <h1 class="section-title" id="storeName">Kitchen</h1>
+                    <p class="text-muted" style="font-size:0.8rem" id="storeMeta"></p>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <a id="editLink" class="btn btn-secondary btn-sm">✏️ Edit</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="section">
+            <div class="grid-3" id="statsGrid">
+                <div class="glass-card stat-card tilt-card animate-in"><div class="stat-value" id="statItems">0</div><div class="stat-label">Ingredients</div></div>
+                <div class="glass-card stat-card tilt-card animate-in"><div class="stat-value" id="statFamily">0</div><div class="stat-label">Family</div></div>
+                <div class="glass-card stat-card tilt-card animate-in"><div class="stat-value" id="statDays">0</div><div class="stat-label">Est. Days</div></div>
+            </div>
+        </section>
+
+        <!-- Inventory -->
+        <section class="section animate-in" style="animation-delay:0.3s">
+            <div class="section-header"><h2 class="section-title">Inventory</h2></div>
+            <div class="grid-4" id="inventoryGrid"></div>
+        </section>
+
+        <!-- Daily Consumption -->
+        <section class="section animate-in" style="animation-delay:0.4s">
+            <div class="section-header"><h2 class="section-title">Daily Usage Estimate</h2><p class="section-subtitle">Based on your family's appetite</p></div>
+            <div class="glass-card" id="consumptionCard"></div>
+        </section>
+
+        <!-- Meal Planning -->
+        <section class="section animate-in" style="animation-delay:0.5s">
+            <div class="section-header"><h2 class="section-title">Plan Meals</h2></div>
+            <div class="glass-card">
+                <div style="display:flex;gap:16px;align-items:end;flex-wrap:wrap">
+                    <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+                        <label class="form-label">Target Days</label>
+                        <input type="number" class="input" id="targetDays" placeholder="7" min="1" max="30">
+                    </div>
+                    <button class="btn btn-primary" onclick="planMeals()">🗓️ Generate Meal Plan</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Meal Plan Results -->
+        <section class="section hidden" id="mealPlanSection">
+            <div class="section-header"><h2 class="section-title">Meal Plan</h2><p class="section-subtitle" id="mealPlanSub"></p></div>
+            <div class="day-tabs" id="dayTabs"></div>
+            <div id="dayContent"></div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    const storeId='{{ store_id }}';let storeData=null;let mealPlan=[];
+    async function load(){
+        try{
+            const d=await api('/api/stores/'+storeId);storeData=d.store;
+            document.getElementById('storeName').textContent=storeData.name;
+            document.getElementById('storeMeta').textContent=`Created ${new Date(storeData.created_at).toLocaleDateString()}`;
+            document.getElementById('editLink').href='/edit/'+storeId;
+            document.getElementById('statItems').textContent=Object.keys(storeData.groceries).length;
+            document.getElementById('statFamily').textContent=storeData.family.length;
+            document.getElementById('statDays').textContent=storeData.estimated_days||'?';
+            // Inventory
+            const ig=document.getElementById('inventoryGrid');ig.innerHTML='';
+            for(const[n,i]of Object.entries(storeData.groceries)){
+                const c=document.createElement('div');c.className='glass-card ingredient-card tilt-card animate-in';
+                c.innerHTML=`<div class="ingredient-img-wrap">${i.img?`<img src="${i.img}" alt="${n}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'><span class="ingredient-emoji" style="display:none">${i.emoji||'🥘'}</span>`:`<span class="ingredient-emoji">${i.emoji||'🥘'}</span>`}</div><div class="ingredient-name">${n}</div><div class="ingredient-qty">${i.qty} ${i.unit}</div>`;
+                ig.appendChild(c);
+            }
+            // Consumption
+            const cc=document.getElementById('consumptionCard');let ch='<div class="grid-3">';
+            for(const[it,d]of Object.entries(storeData.daily_consumption||{})){
+                const inf=storeData.groceries[it]||{};
+                ch+=`<div style="display:flex;align-items:center;gap:12px;padding:8px 0"><span style="font-size:1.4rem">${inf.emoji||'🥘'}</span><div><div style="font-weight:600;font-size:0.85rem;text-transform:capitalize">${it}</div><div style="font-size:0.7rem;color:var(--text-3)">${d} ${inf.unit||''}/day</div></div></div>`;
+            }
+            ch+='</div>';cc.innerHTML=ch;
+            document.getElementById('targetDays').value=storeData.estimated_days||7;
+            if(storeData.meal_plan&&storeData.meal_plan.length>0)renderMealPlan(storeData.meal_plan,storeData.target_days||storeData.meal_plan.length);
+            document.getElementById('dashLoading').classList.add('hidden');document.getElementById('dashMain').classList.remove('hidden');
+            setTimeout(initTiltCards,200);
+        }catch(e){document.getElementById('dashLoading').innerHTML='<p style="color:var(--red)">Failed to load.</p><a href="/" class="btn btn-secondary mt-2">Go Back</a>'}
+    }
+    async function planMeals(){
+        const td=parseInt(document.getElementById('targetDays').value);if(!td||td<1)return showToast('Enter valid days','error');
+        showLoading('Planning '+td+' days of meals...');
+        try{
+            const d=await api('/api/stores/'+storeId+'/plan',{method:'POST',body:JSON.stringify({target_days:td})});
+            hideLoading();renderMealPlan(d.meal_plan,td);showToast('Meal plan ready!','success');
+        }catch(e){hideLoading()}
+    }
+    function renderMealPlan(mp,td){
+        mealPlan=mp;const s=document.getElementById('mealPlanSection');s.classList.remove('hidden');
+        document.getElementById('mealPlanSub').textContent=`${td} days for ${storeData.family.length} people`;
+        const tabs=document.getElementById('dayTabs');tabs.innerHTML='';
+        mp.forEach((d,i)=>{const t=document.createElement('div');t.className=`day-tab ${i===0?'active':''}`;t.textContent=`Day ${d.day}`;t.onclick=()=>switchDay(i);tabs.appendChild(t)});
+        renderDay(0);s.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    function switchDay(i){document.querySelectorAll('.day-tab').forEach((t,j)=>t.classList.toggle('active',j===i));renderDay(i)}
+    function renderDay(i){
+        const day=mealPlan[i];const c=document.getElementById('dayContent');
+        const types=['breakfast','lunch','dinner'];const icons={breakfast:'🌅',lunch:'☀️',dinner:'🌙'};
+        let h=`<div style="font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:16px;display:flex;align-items:center;gap:10px"><span style="background:var(--accent-dim);color:var(--accent);padding:4px 14px;border-radius:999px;font-size:0.75rem">Day ${day.day}</span>Three meals</div><div class="grid-3">`;
+        types.forEach(type=>{
+            const m=day.meals[type];if(!m)return;
+            h+=`<div class="glass-card meal-card tilt-card" onclick="selectMeal(${day.day},'${type}')"><div class="meal-type-badge">${icons[type]} ${type}</div><div class="meal-name">${m.name}</div><div class="meal-meta"><span>⏱ ${m.cook_time||'30 min'}</span><span>📊 ${m.difficulty||'Medium'}</span></div><div class="meal-ingredients">${(m.ingredients||[]).map(i=>`<span style="display:inline-block;background:var(--surface);padding:3px 10px;border-radius:999px;margin:2px;font-size:0.7rem">${i}</span>`).join('')}</div><div style="margin-top:16px"><button class="btn btn-primary btn-sm" style="width:100%">Cook This →</button></div></div>`;
+        });
+        h+='</div>';c.innerHTML=h;setTimeout(initTiltCards,100);
+    }
+    async function selectMeal(day,type){
+        showLoading('Generating recipe...');
+        try{
+            await api('/api/stores/'+storeId+'/select-meal',{method:'POST',body:JSON.stringify({day,meal_type:type})});
+            hideLoading();showToast('Recipe ready!','success');setTimeout(()=>window.location.href='/cooking/'+storeId,800);
+        }catch(e){hideLoading()}
+    }
+    load();
+</script>
+{% endblock %}

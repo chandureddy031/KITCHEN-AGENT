@@ -1,0 +1,281 @@
+{
+  "users": {
+    "ec1d4186": {
+      "id": "ec1d4186",
+      "username": "chndureddy7@gmail.com",
+      "email": "chndureddy7@gmail.com",
+      "password_hash": "56723fe4f55c19d869c5ba37ba91a6835033022791856cee7dc9717e77a2d582",
+      "password_salt": "2cc22c40103b499f",
+      "display_name": "chandu",
+      "bio": "LIVE THE LIFE YOU WANT",
+      "avatar_base64": "data:image/jpeg;base64,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",
+      "created_at": "2026-05-04T11:35:49.703184+00:00"
+    }
+  },
+  "tokens": {
+    "86ea451342e1465da0101ee60b5cc63c": "ec1d4186"
+  },
+  "stores": {
+    "4ebfa961": {
+      "id": "4ebfa961",
+      "user_id": "ec1d4186",
+      "name": "My Kitchen",
+      "groceries": {
+        "tomatos": {
+          "qty": 5,
+          "unit": "kg",
+          "emoji": "🍅",
+          "img": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200&h=200&fit=crop"
+        },
+        "onion": {
+          "qty": 5,
+          "unit": "kg",
+          "emoji": "🧅",
+          "img": "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=200&h=200&fit=crop"
+        },
+        "water": {
+          "qty": 50,
+          "unit": "liters",
+          "emoji": "💧",
+          "img": "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=200&h=200&fit=crop"
+        },
+        "rice": {
+          "qty": 50,
+          "unit": "packets",
+          "emoji": "🍚",
+          "img": "https://images.unsplash.com/photo-1536304993881-460e2e8e7734?w=200&h=200&fit=crop"
+        }
+      },
+      "family": [
+        {
+          "name": "me",
+          "age": 22,
+          "appetite": "heavy"
+        }
+      ],
+      "target_days": 3,
+      "daily_consumption": {
+        "tomatos": 0.7,
+        "onion": 0.7,
+        "water": 2.8,
+        "rice": 1.4
+      },
+      "estimated_days": 7,
+      "meal_plan": [
+        {
+          "day": 1,
+          "meals": {
+            "breakfast": {
+              "name": "Tomato and Onion Fried Rice",
+              "ingredients": [
+                "tomatos (0.2 kg)",
+                "onion (0.1 kg)",
+                "rice (1 packet)",
+                "water (0.5 liters)"
+              ],
+              "cook_time": "20 min",
+              "difficulty": "Easy"
+            },
+            "lunch": {
+              "name": "Grilled Tomato and Onion",
+              "ingredients": [
+                "tomatos (0.3 kg)",
+                "onion (0.2 kg)",
+                "water (0.2 liters)"
+              ],
+              "cook_time": "25 min",
+              "difficulty": "Easy"
+            },
+            "dinner": {
+              "name": "Tomato and Onion Rice Bowl",
+              "ingredients": [
+                "tomatos (0.4 kg)",
+                "onion (0.3 kg)",
+                "rice (1 packet)",
+                "water (0.5 liters)"
+              ],
+              "cook_time": "40 min",
+              "difficulty": "Medium"
+            }
+          }
+        },
+        {
+          "day": 2,
+          "meals": {
+            "breakfast": {
+              "name": "Onion and Tomato Porridge",
+              "ingredients": [
+                "tomatos (0.1 kg)",
+                "onion (0.1 kg)",
+                "rice (0.5 packet)",
+                "water (1 liter)"
+              ],
+              "cook_time": "30 min",
+              "difficulty": "Easy"
+            },
+            "lunch": {
+              "name": "Tomato and Onion Soup",
+              "ingredients": [
+                "tomatos (0.5 kg)",
+                "onion (0.2 kg)",
+                "water (2 liters)"
+              ],
+              "cook_time": "35 min",
+              "difficulty": "Medium"
+            },
+            "dinner": {
+              "name": "Roasted Tomato and Onion with Rice",
+              "ingredients": [
+                "tomatos (0.4 kg)",
+                "onion (0.2 kg)",
+                "rice (1 packet)",
+                "water (0.5 liters)"
+              ],
+              "cook_time": "45 min",
+              "difficulty": "Medium"
+            }
+          }
+        },
+        {
+          "day": 3,
+          "meals": {
+            "breakfast": {
+              "name": "Tomato and Onion Fried Rice Cakes",
+              "ingredients": [
+                "tomatos (0.2 kg)",
+                "onion (0.1 kg)",
+                "rice (1 packet)",
+                "water (0.5 liters)"
+              ],
+              "cook_time": "25 min",
+              "difficulty": "Easy"
+            },
+            "lunch": {
+              "name": "Onion and Tomato Salad",
+              "ingredients": [
+                "tomatos (0.3 kg)",
+                "onion (0.2 kg)",
+                "water (0.2 liters)"
+              ],
+              "cook_time": "15 min",
+              "difficulty": "Easy"
+            },
+            "dinner": {
+              "name": "Baked Tomato and Onion with Rice",
+              "ingredients": [
+                "tomatos (0.4 kg)",
+                "onion (0.2 kg)",
+                "rice (1 packet)",
+                "water (0.5 liters)"
+              ],
+              "cook_time": "40 min",
+              "difficulty": "Medium"
+            }
+          }
+        }
+      ],
+      "current_recipe": {
+        "name": "Grilled Tomato and Onion",
+        "ingredients": [
+          "tomatos (0.3 kg)",
+          "onion (0.2 kg)",
+          "water (0.2 liters)"
+        ],
+        "cook_time": "25 min",
+        "difficulty": "Easy",
+        "day": 1,
+        "meal_type": "lunch"
+      },
+      "current_step": 6,
+      "recipe_steps": [
+        {
+          "step_number": 1,
+          "title": "Prepare Ingredients",
+          "description": "Rinse the tomatoes (0.3 kg) and onion (0.2 kg) under cold running water to remove any dirt or debris. Gently pat them dry with a paper towel to remove excess moisture.",
+          "duration": "5 min",
+          "tips": "Make sure to handle the ingredients gently to avoid bruising or damaging them.",
+          "ingredients_used": [
+            "tomatos",
+            "onion",
+            "water"
+          ]
+        },
+        {
+          "step_number": 2,
+          "title": "Slice the Onion",
+          "description": "Peel the onion and slice it into 0.5 cm thick rings. Separate the rings into individual pieces.",
+          "duration": "3 min",
+          "tips": "Use a very sharp knife to prevent the onion from tearing. If you're concerned about tearing, try chilling the onion in the refrigerator for about 30 minutes before slicing.",
+          "ingredients_used": [
+            "onion"
+          ]
+        },
+        {
+          "step_number": 3,
+          "title": "Slice the Tomatoes",
+          "description": "Core the tomatoes and slice them into 0.5 cm thick slices.",
+          "duration": "4 min",
+          "tips": "Try to make the slices as uniform as possible so that they cook evenly. Remove any excess moisture from the slices with a paper towel.",
+          "ingredients_used": [
+            "tomatos"
+          ]
+        },
+        {
+          "step_number": 4,
+          "title": "Preheat the Grill",
+          "description": "Preheat a grill or grill pan to medium-high heat. If using a gas or electric grill, set the temperature to 200°C. For a charcoal grill, wait until the coals are ashed over and the grill is hot.",
+          "duration": "10 min",
+          "tips": "Ensure the grates are clean and brush them with a small amount of oil to prevent sticking.",
+          "ingredients_used": []
+        },
+        {
+          "step_number": 5,
+          "title": "Grill the Tomatoes and Onions",
+          "description": "Place the tomato and onion slices on the grill. Close the lid if using a gas or electric grill. Cook for 3-4 minutes per side, or until they have nice grill marks and are slightly charred.",
+          "duration": "12 min",
+          "tips": "Do not overcrowd the grill. Cook the slices in batches if necessary. Use a spatula to carefully flip the slices.",
+          "ingredients_used": [
+            "tomatos",
+            "onion"
+          ]
+        },
+        {
+          "step_number": 6,
+          "title": "Serve",
+          "description": "Once the tomatoes and onions are grilled, remove them from the heat. Serve them hot, garnished with any desired herbs or seasonings.",
+          "duration": "2 min",
+          "tips": "Consider serving with a dollop of sour cream or a sprinkle of fresh parsley for added flavor.",
+          "ingredients_used": [
+            "tomatos",
+            "onion"
+          ]
+        }
+      ],
+      "is_cooking_complete": true,
+      "created_at": "2026-05-04T11:36:46.657746+00:00",
+      "updated_at": "2026-05-04T11:46:14.135517+00:00"
+    }
+  },
+  "ratings": [
+    {
+      "user_id": "ec1d4186",
+      "store_id": "4ebfa961",
+      "meal_name": "Grilled Tomato and Onion",
+      "stars": 5,
+      "comment": "good",
+      "created_at": "2026-05-04T11:46:22.513447+00:00"
+    }
+  ],
+  "community_recipes": {
+    "grilled tomato and onion": {
+      "total_stars": 5,
+      "count": 1,
+      "comments": [
+        {
+          "stars": 5,
+          "comment": "good"
+        }
+      ]
+    }
+  }
+}

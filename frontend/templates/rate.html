@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Rate — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <a href="#" id="backDash" style="font-size:0.8rem;color:var(--text-3);display:inline-flex;align-items:center;gap:6px;margin-bottom:20px">← Back to Dashboard</a>
+
+    <section class="section text-center animate-in">
+        <div style="font-size:4rem;margin-bottom:16px">⭐</div>
+        <h1 class="section-title" style="font-size:2rem" id="rateTitle">Rate Your Experience</h1>
+        <p class="section-subtitle" id="rateSub">How was the recipe?</p>
+    </section>
+
+    <section class="section animate-in" style="animation-delay:0.1s;max-width:600px;margin:0 auto">
+        <div class="glass-card">
+            <div class="stars" id="starRating">
+                <span class="star" onclick="setRating(1)">★</span>
+                <span class="star" onclick="setRating(2)">★</span>
+                <span class="star" onclick="setRating(3)">★</span>
+                <span class="star" onclick="setRating(4)">★</span>
+                <span class="star" onclick="setRating(5)">★</span>
+            </div>
+            <p class="text-center text-muted mb-3" id="ratingLabel" style="font-size:0.8rem">Tap a star to rate</p>
+            <div class="form-group"><label class="form-label">Your Comments</label><textarea id="ratingComment" placeholder="What did you think?"></textarea></div>
+            <div class="text-center mt-3"><button class="btn btn-primary btn-lg" onclick="submitRating()" id="submitBtn">Submit Rating</button></div>
+        </div>
+    </section>
+
+    <section class="section animate-in" style="animation-delay:0.2s;max-width:700px;margin:40px auto 0">
+        <div class="section-header"><h2 class="section-title">Community Ratings</h2><p class="section-subtitle">See what others are cooking</p></div>
+        <div id="communityRatings"><div class="text-center" style="padding:20px"><div class="spinner"></div></div></div>
+    </section>
+
+    <section class="section text-center">
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+            <a id="cookAnother" class="btn btn-primary">🍳 Cook Another Meal</a>
+            <a href="/" class="btn btn-secondary">🏠 My Kitchens</a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    const storeId='{{ store_id }}';let selectedRating=0,mealName='Recipe';
+    async function load(){
+        document.getElementById('backDash').href='/dashboard/'+storeId;
+        document.getElementById('cookAnother').href='/dashboard/'+storeId;
+        try{const d=await api('/api/stores/'+storeId);const r=d.store.current_recipe||{};mealName=r.name||'Recipe';document.getElementById('rateTitle').textContent=`How was "${mealName}"?`;document.getElementById('rateSub').textContent=`Day ${r.day||'?'} • ${r.meal_type||'meal'}`}catch(e){}
+        loadCommunity();
+    }
+    const labels=['','Poor','Fair','Good','Great','Amazing!'];
+    function setRating(v){selectedRating=v;document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('active',i<v));document.getElementById('ratingLabel').textContent=labels[v]}
+    async function submitRating(){
+        if(!selectedRating)return showToast('Select a star rating','error');
+        document.getElementById('submitBtn').disabled=true;
+        try{await api('/api/rate',{method:'POST',body:JSON.stringify({store_id:storeId,meal_name:mealName,stars:selectedRating,comment:document.getElementById('ratingComment').value.trim()})});showToast('Thank you!','success');launchConfetti();setTimeout(loadCommunity,500)}catch(e){document.getElementById('submitBtn').disabled=false}
+    }
+    async function loadCommunity(){
+        try{
+            const[rd,cd]=await Promise.all([api('/api/ratings'),api('/api/community')]);
+            const c=document.getElementById('communityRatings');let h='';
+            if(cd.recipes&&cd.recipes.length){h+='<div class="grid-2 mb-3">';cd.recipes.slice(0,6).forEach(r=>{h+=`<div class="glass-card" style="padding:20px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-family:var(--font-serif);font-style:italic">${r.name}</span><span style="color:var(--accent);font-weight:700">${r.avg_rating}★</span></div><div style="font-size:0.7rem;color:var(--text-3)">${r.count} rating${r.count!==1?'s':''}</div>${r.recent_comments.length?`<div style="margin-top:10px;font-size:0.75rem;color:var(--text-2);font-style:italic">"${r.recent_comments[r.recent_comments.length-1].comment||'Great!'}"</div>`:''}</div>`});h+='</div>'}
+            if(rd.ratings&&rd.ratings.length){h+='<h3 style="font-family:var(--font-display);font-size:0.9rem;margin-bottom:12px;color:var(--text-2)">Recent Reviews</h3>';rd.ratings.slice(0,10).forEach(r=>{h+=`<div class="glass-card" style="padding:16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-family:var(--font-serif);font-style:italic">${r.meal_name}</span><span style="color:var(--accent)">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</span></div>${r.comment?`<div style="font-size:0.8rem;color:var(--text-2)">"${r.comment}"</div>`:''}</div>`})}
+            if(!h)h='<div class="empty-state"><div class="empty-icon">📝</div><p>No ratings yet. Be the first!</p></div>';
+            c.innerHTML=h;
+        }catch(e){document.getElementById('communityRatings').innerHTML='<p class="text-muted text-center">Could not load ratings.</p>'}
+    }
+    load();
+</script>
+{% endblock %}

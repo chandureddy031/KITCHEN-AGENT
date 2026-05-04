@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Log In — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-side">
+        <div class="auth-floating">
+            <span style="top:10%;left:15%;animation-delay:0s">🍅</span>
+            <span style="top:25%;right:20%;animation-delay:1s">🍚</span>
+            <span style="top:55%;left:10%;animation-delay:2s">🥕</span>
+            <span style="top:70%;right:12%;animation-delay:0.5s">🌶️</span>
+            <span style="top:40%;left:30%;animation-delay:1.5s">🧅</span>
+            <span style="top:80%;left:25%;animation-delay:3s">🥦</span>
+        </div>
+        <h1 class="auth-side-title">
+            Your <span class="accent">AI-Powered</span><br>Kitchen Manager
+        </h1>
+        <p class="auth-side-sub">Plan meals, track groceries, and cook with confidence.</p>
+    </div>
+    <div class="auth-form-side">
+        <div class="auth-card">
+            <h2>Welcome back</h2>
+            <p class="auth-sub">Log in to manage your kitchens</p>
+
+            <div class="form-group">
+                <label class="form-label">Username or Email</label>
+                <input type="text" class="input" id="loginId" placeholder="john or john@email.com" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="input" id="loginPass" placeholder="Your password" autocomplete="current-password">
+            </div>
+            <button class="btn btn-primary btn-lg" style="width:100%" onclick="doLogin()" id="loginBtn">Log In</button>
+            <p class="auth-link">Don't have an account? <a href="/signup">Sign up</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    async function doLogin(){
+        const id=document.getElementById('loginId').value.trim();
+        const pass=document.getElementById('loginPass').value;
+        if(!id||!pass)return showToast('Please fill in all fields','error');
+        document.getElementById('loginBtn').disabled=true;
+        try{
+            await api('/api/auth/login',{method:'POST',body:JSON.stringify({username:id,password:pass})});
+            showToast('Welcome back!','success');
+            setTimeout(()=>window.location.href='/',500);
+        }catch(e){document.getElementById('loginBtn').disabled=false}
+    }
+    document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+    document.getElementById('loginId').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
+</script>
+{% endblock %}

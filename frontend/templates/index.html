@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}My Kitchens — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Welcome -->
+    <section class="welcome-banner animate-in">
+        <h1 class="welcome-greeting">Welcome, <span class="text-accent">{{ user.display_name or user.username }}</span></h1>
+        <p class="welcome-sub">Manage your kitchens, plan meals, and cook smarter.</p>
+    </section>
+
+    <!-- Create Button -->
+    <section class="section animate-in" style="animation-delay:0.1s">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+            <div>
+                <h2 class="section-title" style="margin-bottom:2px">Your Kitchens</h2>
+                <p class="text-muted" style="font-size:0.75rem" id="storeCountLabel">Loading...</p>
+            </div>
+            <a href="/create" class="btn btn-primary" id="createBtn">+ New Kitchen</a>
+        </div>
+    </section>
+
+    <!-- Store Grid -->
+    <section class="section" id="storesSection">
+        <div class="grid-3" id="storesGrid"></div>
+        <div class="empty-state hidden" id="emptyState">
+            <div class="empty-icon">🍳</div>
+            <p style="font-size:1rem;margin-bottom:8px">No kitchens yet</p>
+            <p class="text-muted" style="font-size:0.8rem;margin-bottom:24px">Create your first kitchen to start planning meals</p>
+            <a href="/create" class="btn btn-primary">Create Your First Kitchen</a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    async function loadStores(){
+        try{
+            const data=await api('/api/stores');
+            const stores=data.stores;
+            const count=data.count;
+            const max=data.max;
+
+            document.getElementById('storeCountLabel').textContent=
+                `${count} of ${max} kitchens used`;
+
+            if(count>=max){
+                document.getElementById('createBtn').classList.add('hidden');
+            }else{
+                document.getElementById('createBtn').classList.remove('hidden');
+            }
+
+            const grid=document.getElementById('storesGrid');
+            const empty=document.getElementById('emptyState');
+
+            if(stores.length===0){
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+            grid.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            grid.innerHTML='';
+            stores.forEach((s,i)=>{
+                const itemCount=Object.keys(s.groceries||{}).length;
+                const memberCount=(s.family||[]).length;
+                const days=s.estimated_days||'?';
+                const hasPlan=(s.meal_plan||[]).length>0;
+                const created=new Date(s.created_at).toLocaleDateString();
+
+                const card=document.createElement('div');
+                card.className='glass-card store-card tilt-card animate-in';
+                card.style.animationDelay=(i*0.08)+'s';
+                card.innerHTML=`
+                    <div class="store-card-name">${s.name}</div>
+                    <div class="store-card-stats">
+                        <span class="store-stat">🥘 <strong>${itemCount}</strong> items</span>
+                        <span class="store-stat">👨‍👩‍👧 <strong>${memberCount}</strong> members</span>
+                        <span class="store-stat">📅 <strong>${days}</strong> days</span>
+                        ${hasPlan?'<span class="store-stat text-green">✓ Planned</span>':''}
+                    </div>
+                    <div style="font-size:0.7rem;color:var(--text-3);margin-bottom:12px">Created ${created}</div>
+                    <div class="store-card-actions">
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();window.location.href='/dashboard/${s.id}'">View</button>
+                        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();window.location.href='/edit/${s.id}'">Edit</button>
+                        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();confirmDelete('${s.id}','${s.name.replace(/'/g,"\\'")}')">Delete</button>
+                    </div>
+                `;
+                card.addEventListener('click',()=>window.location.href='/dashboard/'+s.id);
+                grid.appendChild(card);
+            });
+            setTimeout(initTiltCards,200);
+        }catch(e){
+            document.getElementById('storesGrid').innerHTML='<p class="text-muted text-center">Failed to load kitchens.</p>';
+        }
+    }
+
+    function confirmDelete(id,name){
+        showModal(
+            'Delete Kitchen?',
+            `"${name}" and all its data will be permanently deleted.`,
+            async()=>{
+                try{
+                    await api(`/api/stores/${id}`,{method:'DELETE'});
+                    showToast('Kitchen deleted','success');
+                    loadStores();
+                }catch(e){}
+            }
+        );
+    }
+
+    loadStores();
+</script>
+{% endblock %}

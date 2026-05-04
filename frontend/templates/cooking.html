@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Cooking — Smart Kitchen AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div id="cookLoading" class="text-center" style="padding-top:100px"><div class="spinner"></div><p class="text-muted mt-2">Loading recipe...</p></div>
+    <div id="cookMain" class="hidden">
+        <a href="#" id="backDash" style="font-size:0.8rem;color:var(--text-3);display:inline-flex;align-items:center;gap:6px;margin-bottom:20px">← Back to Dashboard</a>
+        <section class="section text-center"><h1 class="hero-title" style="font-size:2rem;font-family:var(--font-display);font-weight:800;letter-spacing:-0.03em" id="recipeTitle">Cooking</h1><p id="recipeMeta" style="font-family:var(--font-serif);font-style:italic;color:var(--text-2)"></p></section>
+        <section class="section">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:0.75rem;color:var(--text-3)">PROGRESS</span><span style="font-size:0.75rem;color:var(--accent)" id="progLabel">Step 1</span></div>
+            <div class="progress-wrap"><div class="progress-bar" id="progBar" style="width:0%"></div></div>
+        </section>
+        <section class="section"><div class="glass-card step-card" id="stepCard">
+            <div class="step-number" id="sNum">1</div>
+            <div class="step-title" id="sTitle">Loading...</div>
+            <div class="step-desc" id="sDesc"></div>
+            <div class="step-duration" id="sDur">⏱ 0 min</div>
+            <div class="step-tip" id="sTip" style="display:none"></div>
+            <div class="timer-display" id="timerDisp" style="display:none">00:00</div>
+            <div class="timer-controls" id="timerCtrls" style="display:none">
+                <button class="btn btn-sm btn-secondary" onclick="startTimer()">▶ Start Timer</button>
+                <button class="btn btn-sm btn-ghost" onclick="resetTimer()">↺ Reset</button>
+            </div>
+            <div class="step-actions">
+                <button class="btn btn-ghost" id="notDoneBtn" onclick="notDone()">Not Yet</button>
+                <button class="btn btn-success" id="doneBtn" onclick="completeStep()">✓ Done — Next</button>
+            </div>
+        </div></section>
+        <section class="section"><div class="section-header"><h2 class="section-title" style="font-size:1.1rem">All Steps</h2></div><div id="stepsOverview"></div></section>
+        <section class="section"><div class="section-header"><h2 class="section-title" style="font-size:1.1rem">Ingredients</h2></div><div class="glass-card" id="ingList"></div></section>
+    </div>
+    <div id="completionBanner" class="hidden" style="padding-top:60px"><div class="completion-banner animate-in"><h2>🎉 Recipe Complete!</h2><p style="color:var(--text-2);margin-bottom:24px">Time to enjoy your meal.</p><div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap"><a id="rateLink" class="btn btn-primary">Rate This Recipe</a><a id="dashLink" class="btn btn-secondary">Cook Another</a></div></div></div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    const storeId='{{ store_id }}';let steps=[],cur=0,timerInt=null,timerSec=0;
+    async function load(){
+        try{
+            const d=await api('/api/stores/'+storeId);const s=d.store;steps=s.recipe_steps||[];cur=s.current_step||0;
+            document.getElementById('backDash').href='/dashboard/'+storeId;
+            document.getElementById('rateLink').href='/rate/'+storeId;
+            document.getElementById('dashLink').href='/dashboard/'+storeId;
+            if(!steps.length){document.getElementById('cookLoading').innerHTML='<p style="color:var(--text-2)">No recipe selected.</p><a href="/dashboard/'+storeId+'" class="btn btn-secondary mt-2">Go to Dashboard</a>';return}
+            const r=s.current_recipe||{};
+            document.getElementById('recipeTitle').textContent='🍳 '+(r.name||'Cooking');
+            document.getElementById('recipeMeta').textContent=`Day ${r.day||'?'} • ${r.meal_type||'meal'} • ${steps.length} steps`;
+            document.getElementById('ingList').innerHTML=(r.ingredients||[]).map(i=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:0.85rem"><span style="color:var(--accent)">•</span> ${i}</div>`).join('');
+            renderOverview();renderStep(cur);
+            document.getElementById('cookLoading').classList.add('hidden');document.getElementById('cookMain').classList.remove('hidden');
+        }catch(e){document.getElementById('cookLoading').innerHTML='<p style="color:var(--red)">Failed to load.</p>'}
+    }
+    function renderStep(i){
+        if(i>=steps.length){showCompletion();return}
+        cur=i;const s=steps[i];
+        document.getElementById('progBar').style.width=((i)/steps.length*100)+'%';
+        document.getElementById('progLabel').textContent=`Step ${i+1} of ${steps.length}`;
+        document.getElementById('sNum').textContent=s.step_number||(i+1);
+        document.getElementById('sTitle').textContent=s.title||`Step ${i+1}`;
+        document.getElementById('sDesc').textContent=s.description||'';
+        document.getElementById('sDur').innerHTML='⏱ '+(s.duration||'5 min');
+        const tip=document.getElementById('sTip');if(s.tips){tip.textContent='💡 '+s.tips;tip.style.display='block'}else{tip.style.display='none'}
+        const mins=parseInt(s.duration)||5;timerSec=mins*60;
+        document.getElementById('timerDisp').textContent=fmtTime(timerSec);
+        document.getElementById('timerDisp').style.display='block';document.getElementById('timerCtrls').style.display='flex';
+        clearInterval(timerInt);timerInt=null;
+        const db=document.getElementById('doneBtn');
+        if(i===steps.length-1){db.textContent='🎉 Finish!';db.className='btn btn-primary'}else{db.textContent='✓ Done — Next';db.className='btn btn-success'}
+        document.querySelectorAll('.so-item').forEach((el,j)=>{el.style.borderColor=j===i?'var(--accent)':'var(--border)';el.style.background=j===i?'var(--accent-dim)':'var(--surface)'});
+        const card=document.getElementById('stepCard');card.style.animation='none';card.offsetHeight;card.style.animation='fadeUp 0.5s ease forwards';
+    }
+    async function completeStep(){
+        clearInterval(timerInt);
+        try{const d=await api('/api/stores/'+storeId+'/complete-step',{method:'POST',body:JSON.stringify({step_index:cur})});
+        if(d.completed)showCompletion();else{renderStep(d.current_step);showToast('Step '+cur+' done!','success')}}catch(e){}
+    }
+    function notDone(){showToast('Take your time! Click Done when ready.','info');const card=document.getElementById('stepCard');card.style.animation='none';card.offsetHeight;card.style.animation='fadeUp 0.4s ease forwards'}
+    function showCompletion(){document.getElementById('cookMain').classList.add('hidden');document.getElementById('completionBanner').classList.remove('hidden');document.getElementById('progBar').style.width='100%';launchConfetti()}
+    function renderOverview(){document.getElementById('stepsOverview').innerHTML=steps.map((s,i)=>`<div class="glass-card so-item" style="padding:14px 20px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:16px;border:1px solid var(--border);border-radius:var(--radius-sm);transition:all 0.25s" onclick="renderStep(${i})"><span style="font-family:var(--font-display);font-weight:700;color:var(--accent);font-size:1.1rem;min-width:28px">${s.step_number||(i+1)}</span><span style="font-size:0.85rem">${s.title||'Step '+(i+1)}</span><span style="margin-left:auto;font-size:0.7rem;color:var(--text-3)">${s.duration||''}</span></div>`).join('')}
+    function fmtTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+    function startTimer(){if(timerInt)return;timerInt=setInterval(()=>{timerSec--;document.getElementById('timerDisp').textContent=fmtTime(timerSec);if(timerSec<=0){clearInterval(timerInt);timerInt=null;document.getElementById('timerDisp').textContent="⏰ Time's up!";showToast('Timer done!','info')}},1000)}
+    function resetTimer(){clearInterval(timerInt);timerInt=null;const s=steps[cur];timerSec=(parseInt(s?.duration)||5)*60;document.getElementById('timerDisp').textContent=fmtTime(timerSec)}
+    load();
+</script>
+{% endblock %}
