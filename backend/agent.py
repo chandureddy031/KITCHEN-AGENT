@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 # ── Configuration ─────────────────────────────────────────────
-GROQ_API_KEY = os.get_env("GROQ_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 MODEL_NAME = "llama-3.3-70b-versatile"
 
 # ── Ingredient emoji & image mapping ──────────────────────────
